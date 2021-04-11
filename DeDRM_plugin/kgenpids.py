@@ -174,13 +174,13 @@ def pidFromSerial(s, l):
 
 # Parse the EXTH header records and use the Kindle serial number to calculate the book pid.
 def getKindlePids(rec209, token, serialnum):
+    if isinstance(serialnum,str):
+        serialnum = serialnum.encode('utf-8')
+
     if rec209 is None:
         return [serialnum]
 
     pids=[]
-
-    if isinstance(serialnum,str):
-        serialnum = serialnum.encode('utf-8')
 
     # Compute book PID
     pidHash = SHA1(serialnum+rec209+token)
@@ -209,7 +209,7 @@ def getK4Pids(rec209, token, kindleDatabase):
         kindleAccountToken = bytearray.fromhex((kindleDatabase[1])['kindle.account.tokens'])
 
     except KeyError:
-        kindleAccountToken=""
+        kindleAccountToken = b''
         pass
 
     try:
@@ -296,14 +296,14 @@ def getPidList(md1, md2, serials=[], kDatabases=[]):
 
     for kDatabase in kDatabases:
         try:
-            pidlst.extend(getK4Pids(md1, md2, kDatabase))
+            pidlst.extend(map(bytes,getK4Pids(md1, md2, kDatabase)))
         except Exception as e:
             print("Error getting PIDs from database {0}: {1}".format(kDatabase[0],e.args[0]))
             traceback.print_exc()
 
     for serialnum in serials:
         try:
-            pidlst.extend(getKindlePids(md1, md2, serialnum))
+            pidlst.extend(map(bytes,getKindlePids(md1, md2, serialnum)))
         except Exception as e:
             print("Error getting PIDs from serial number {0}: {1}".format(serialnum ,e.args[0]))
             traceback.print_exc()

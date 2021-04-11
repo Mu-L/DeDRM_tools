@@ -353,12 +353,16 @@ class Decryptor(object):
 
     def decompress(self, bytes):
         dc = zlib.decompressobj(-15)
-        bytes = dc.decompress(bytes)
-        ex = dc.decompress(b'Z') + dc.flush()
-        if ex:
-            bytes = bytes + ex
-        return bytes
-
+        try:
+            decompressed_bytes = dc.decompress(bytes)
+            ex = dc.decompress(b'Z') + dc.flush()
+            if ex:
+                decompressed_bytes = decompressed_bytes + ex
+        except:
+            # possibly not compressed by zip - just return bytes
+            return bytes
+        return decompressed_bytes 
+    
     def decrypt(self, path, data):
         if path.encode('utf-8') in self._encrypted:
             data = self._aes.decrypt(data)[16:]
@@ -411,12 +415,12 @@ def decryptBook(userkey, inpath, outpath):
                 return 1
             bookkey = rsa.decrypt(codecs.decode(bookkey.encode('ascii'), 'base64'))
             # Padded as per RSAES-PKCS1-v1_5
-            if len(bookkey) != 16:
-                if bookkey[-17] != '\x00' and bookkey[-17] != 0:
+            if len(bookkey) > 16:
+                if bookkey[-17] == '\x00' or bookkey[-17] == 0:
+                    bookkey = bookkey[-16:]
+                else:
                     print("Could not decrypt {0:s}. Wrong key".format(os.path.basename(inpath)))
                     return 2
-                else:
-                    bookkey = bookkey[-16:]
             encryption = inf.read('META-INF/encryption.xml')
             decryptor = Decryptor(bookkey, encryption)
             kwds = dict(compression=ZIP_DEFLATED, allowZip64=False)

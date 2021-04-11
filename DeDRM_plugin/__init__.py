@@ -5,7 +5,7 @@
 # Copyright © 2008-2020 Apprentice Harper et al.
 
 __license__   = 'GPL v3'
-__version__ = '7.0.0'
+__version__ = '7.2.1'
 __docformat__ = 'restructuredtext en'
 
 
@@ -69,8 +69,14 @@ __docformat__ = 'restructuredtext en'
 #   6.6.3 - More cleanup of kindle book names and start of support for .kinf2018
 #   6.7.0 - Handle new library in calibre.
 #   6.8.0 - Full support for .kinf2018 and new KFX encryption (Kindle for PC/Mac 2.5+)
-#   6.8.1 - Kindle key fix for Mac OS X Big Syr
-#   7.0.0 - Switched to Python 3 for calibre 5.0. Thanks to all who comtibuted
+#   6.8.1 - Kindle key fix for Mac OS X Big Sur
+#   7.0.0 - Switched to Python 3 for calibre 5.0. Thanks to all who contributed
+#   7.0.1 - More Python 3 changes. Adobe PDF decryption should now work in some cases
+#   7.0.2 - More Python 3 changes. Adobe PDF decryption should now work on PC too.
+#   7.0.3 - More Python 3 changes. Integer division in ineptpdf.py
+#   7.1.0 - Full release for calibre 5.x
+#   7.2.0 - Update for latest KFX changes, and Python 3 Obok fixes.
+#   7.2.1 - Whitespace!
 
 """
 Decrypt DRMed ebooks.
@@ -421,7 +427,7 @@ class DeDRM(FileTypePlugin):
         # Attempt to decrypt epub with each encryption key (generated or provided).
         print("{0} v{1}: {2} is a PDF ebook".format(PLUGIN_NAME, PLUGIN_VERSION, os.path.basename(path_to_ebook)))
         for keyname, userkeyhex in dedrmprefs['adeptkeys'].items():
-            userkey = userkeyhex.decode('hex')
+            userkey = codecs.decode(userkeyhex,'hex')
             print("{0} v{1}: Trying Encryption key {2:s}".format(PLUGIN_NAME, PLUGIN_VERSION, keyname))
             of = self.temporary_file(".pdf")
 
@@ -467,7 +473,7 @@ class DeDRM(FileTypePlugin):
 
         newkeys = []
         for keyvalue in defaultkeys:
-            if keyvalue.encode('hex') not in dedrmprefs['adeptkeys'].values():
+            if codecs.encode(keyvalue,'hex') not in dedrmprefs['adeptkeys'].values():
                 newkeys.append(keyvalue)
 
         if len(newkeys) > 0:
@@ -491,7 +497,7 @@ class DeDRM(FileTypePlugin):
                         # Store the new successful key in the defaults
                         print("{0} v{1}: Saving a new default key".format(PLUGIN_NAME, PLUGIN_VERSION))
                         try:
-                            dedrmprefs.addnamedvaluetoprefs('adeptkeys','default_key',keyvalue.encode('hex'))
+                            dedrmprefs.addnamedvaluetoprefs('adeptkeys','default_key',codecs.encode(keyvalue,'hex'))
                             dedrmprefs.writeprefs()
                             print("{0} v{1}: Saved a new default key after {2:.1f} seconds".format(PLUGIN_NAME, PLUGIN_VERSION,time.time()-self.starttime))
                         except:
@@ -596,7 +602,7 @@ class DeDRM(FileTypePlugin):
             of = self.temporary_file(".pmlz")
 
             # Give the userkey, ebook and TemporaryPersistent file to the decryption function.
-            result = erdr2pml.decryptBook(path_to_ebook, of.name, True, userkey.decode('hex'))
+            result = erdr2pml.decryptBook(path_to_ebook, of.name, True, codecs.decode(userkey,'hex'))
 
             of.close()
 
